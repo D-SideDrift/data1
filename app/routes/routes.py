@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, redirect, request
+from flask import render_template, redirect, request
 import pandas as pd
 from app.models import db, Fooditems
 from flask import Blueprint
@@ -10,23 +10,20 @@ routes_bp = Blueprint(
 )
 
 
-@routes_bp.route('/api/fooditems')
-def get_fooditems():
-    df = pd.read_csv('fastfood.csv', usecols={"restaurant", "item", "calories"})
-    json_data = df.values.tolist()  # Convert DataFrame to list  of lists
-    print(jsonify(json_data))
-    return jsonify(json_data)
-
-
 @routes_bp.route('/')
 def home():
     return render_template('table.html')
 
 
+@routes_bp.route('/api/fooditems')
+def get_fooditems():
+    return {'data': [fooditem.to_dict() for fooditem in Fooditems.query]}
+
+
 @routes_bp.route('/import')
 def import_csv():
     title = 'Import Datasets'
-    return render_template('import_csv.html', title=title)
+    return render_template('import.html', title=title)
 
 
 @routes_bp.route('/import/upload_file', methods=['POST'])
@@ -39,13 +36,13 @@ def upload_File():
         # file_path = os.path.join(config.UPLOPAD_FOLDER, uploaded_file.filename)
         # save the file
         uploaded_file.save(uploaded_file.filename)
-        parse_csv()
+        parse_csv(uploaded_file.filename)
     return redirect('/import')
 
 
 def parse_csv(file_path):
     # Use Pandas to parse the CSV file
-    csv_data = pd.read_csv
+    csv_data = pd.read_csv(file_path)
     # Loop through the rows and create a student object for each row
     for i, row in csv_data.iterrows():
         fooditem = Fooditems(
